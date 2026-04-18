@@ -12,6 +12,7 @@ const PinSetup = () => {
   const [confirmPin, setConfirmPin] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isSuccess, setIsSuccess] = useState(false);
 
   const handleSetup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,14 +31,28 @@ const PinSetup = () => {
     setLoading(true);
     try {
       await setupMasterPin(pin);
-      await refreshPinStatus();
-      // El refresco de estado en useAuth hará que App.tsx cambie la ruta a PinLogin
+      setIsSuccess(true);
+      // Dar tiempo al usuario para ver el mensaje de éxito
+      setTimeout(async () => {
+        await refreshPinStatus();
+      }, 1500);
     } catch (err) {
       setError('Error al configurar el PIN. Inténtalo de nuevo.');
-    } finally {
       setLoading(false);
     }
   };
+
+  if (isSuccess) {
+    return (
+      <div className="w-full max-w-md text-center space-y-6">
+        <motion.div initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="w-24 h-24 bg-emerald-500 rounded-full flex items-center justify-center mx-auto shadow-2xl shadow-emerald-500/20">
+          <ShieldCheck className="text-white" size={48} />
+        </motion.div>
+        <h2 className="text-2xl font-bold text-white">¡PIN Configurado!</h2>
+        <p className="text-slate-400">Tu sistema ha sido encriptado correctamente. Redirigiendo al acceso...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full max-w-md">

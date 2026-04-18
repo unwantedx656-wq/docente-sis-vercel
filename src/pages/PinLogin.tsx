@@ -54,35 +54,34 @@ const PinLogin = () => {
             </motion.div>
           )}
 
-          <div className="flex justify-center gap-3">
+          <div className="relative flex justify-center gap-3 cursor-pointer" onClick={() => document.getElementById('pin-input')?.focus()}>
             {[...Array(6)].map((_, i) => (
               <div 
                 key={i} 
                 className={cn(
-                  "w-10 h-10 rounded-lg border-2 flex items-center justify-center transition-all duration-300",
+                  "w-12 h-14 rounded-xl border-2 flex items-center justify-center transition-all duration-300",
                   pin.length > i 
-                    ? "border-accent-500 bg-accent-500/20 scale-110" 
-                    : "border-primary-800 bg-primary-900"
+                    ? "border-accent-500 bg-accent-500/10 scale-105" 
+                    : "border-primary-800 bg-primary-900/50"
                 )}
               >
-                {pin.length > i && <div className="w-2 h-2 bg-white rounded-full" />}
+                {pin.length > i && <div className="w-3 h-3 bg-accent-400 rounded-full shadow-[0_0_10px_rgba(var(--accent-500-rgb),0.5)]" />}
               </div>
             ))}
-          </div>
-
-          <div className="relative h-0 overflow-hidden">
-             <input
-              type="password"
+            
+            <input
+              id="pin-input"
+              type="tel"
+              pattern="[0-9]*"
+              inputMode="numeric"
               autoFocus
               maxLength={6}
-              className="absolute inset-0 opacity-0 cursor-default"
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer text-[40px] tracking-[1.5rem] text-center"
               value={pin}
+              autoComplete="one-time-code"
               onChange={e => {
-                const val = e.target.value.replace(/\D/g, '');
+                const val = e.target.value.replace(/\D/g, '').slice(0, 6);
                 setPin(val);
-                if (val.length === 6) {
-                  // Auto-submit opcional o esperar al botón
-                }
               }}
             />
           </div>
