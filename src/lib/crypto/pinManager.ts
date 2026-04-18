@@ -11,12 +11,13 @@ export const setupMasterPin = async (pin: string) => {
   const iterations = 100000;
   
   // Guardar metadata en DB
-  await db.metadata.put({ key: 'pinSalt', value: arrayBufferToBase64(salt.buffer) });
+  await db.metadata.put({ key: 'pinSalt', value: arrayBufferToBase64(salt.buffer.slice(0, 16)) });
   await db.metadata.put({ key: 'pinIterations', value: iterations });
   
-  // Opcional: Guardar un hash para validación rápida (sin poder derivar la clave)
+  // Hash para validación rápida
   const encoder = new TextEncoder();
-  const hashBuffer = await crypto.subtle.digest('SHA-256', encoder.encode(pin + arrayBufferToBase64(salt.buffer)));
+  const pinData = encoder.encode(pin + arrayBufferToBase64(salt.buffer.slice(0, 16)));
+  const hashBuffer = await crypto.subtle.digest('SHA-256', pinData);
   await db.metadata.put({ key: 'pinHash', value: arrayBufferToBase64(hashBuffer) });
 
   return true;
@@ -29,7 +30,8 @@ export const validatePin = async (pin: string): Promise<boolean> => {
   if (!saltMeta || !hashMeta) return false;
   
   const encoder = new TextEncoder();
-  const hashBuffer = await crypto.subtle.digest('SHA-256', encoder.encode(pin + saltMeta.value));
+  const pinData = encoder.encode(pin + saltMeta.value);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', pinData);
   const currentHash = arrayBufferToBase64(hashBuffer);
   
   return currentHash === hashMeta.value;
@@ -41,7 +43,7 @@ export const getEncryptionKey = async (pin: string): Promise<CryptoKey> => {
   
   if (!saltMeta) throw new Error('No se ha configurado un PIN Maestro');
   
-  const salt = new Uint8Array(atob(saltMeta.value).split('').map(c => c.charCodeAt(0)));
+  const salt = new Uint8Array(base64ToArrayBuffer(saltMeta.value));
   const iterations = iterMeta ? Number(iterMeta.value) : 100000;
   
   return deriveKey(pin, salt, iterations);

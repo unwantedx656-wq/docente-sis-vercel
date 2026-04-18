@@ -29,7 +29,7 @@ export const deriveKey = async (pin: string, salt: Uint8Array, iterations: numbe
   const baseKey = await crypto.subtle.importKey(
     'raw',
     encoder.encode(pin),
-    'PBKDF2',
+    { name: 'PBKDF2' },
     false,
     ['deriveKey']
   );
@@ -37,7 +37,7 @@ export const deriveKey = async (pin: string, salt: Uint8Array, iterations: numbe
   return crypto.subtle.deriveKey(
     {
       name: 'PBKDF2',
-      salt: salt.buffer as ArrayBuffer,
+      salt: salt, // SubtleCrypto accepts TypedArray directly
       iterations,
       hash: 'SHA-256'
     },
@@ -56,23 +56,27 @@ export const encrypt = async (data: string, key: CryptoKey): Promise<{ encrypted
   const encodedData = new TextEncoder().encode(data);
   
   const encrypted = await crypto.subtle.encrypt(
-    { name: 'AES-GCM', iv: iv.buffer as ArrayBuffer },
+    { name: 'AES-GCM', iv: iv },
     key,
     encodedData
   );
 
   return {
     encrypted: arrayBufferToBase64(encrypted),
-    iv: arrayBufferToBase64(iv.buffer as ArrayBuffer)
+    iv: arrayBufferToBase64(iv.buffer.slice(0, 12)) // Ensure we only save 12 bytes
   };
 };
 
 /**
  * Decrypts a base64 string using AES-GCM
  */
-export const decrypt = async (encryptedData: string, iv: string, key: CryptoKey): Promise<string> => {
+export const decrypt = async (encryptedData: string, ivBase64: string, key: CryptoKey): Promise<string> => {
+  const ivBuffer = base64ToArrayBuffer(ivBase64);
+  // Ensure we only use the first 12 bytes if the buffer is larger
+  const iv = new Uint8Array(ivBuffer).subarray(0, 12);
+  
   const decrypted = await crypto.subtle.decrypt(
-    { name: 'AES-GCM', iv: base64ToArrayBuffer(iv) },
+    { name: 'AES-GCM', iv: iv },
     key,
     base64ToArrayBuffer(encryptedData)
   );

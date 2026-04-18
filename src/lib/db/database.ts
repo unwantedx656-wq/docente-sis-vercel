@@ -58,6 +58,14 @@ export interface SyncQueueItem {
   synced: boolean;
 }
 
+export interface AsistenciaRecord {
+  id?: number;
+  cursoId: number;
+  fecha: string;
+  registrosEnc: string; // JSON stringificando { alumnoId: status } y encriptando
+  iv: string;
+}
+
 export class DocenteDB extends Dexie {
   cursos!: Table<Curso>;
   unidades!: Table<Unidad>;
@@ -65,18 +73,20 @@ export class DocenteDB extends Dexie {
   configuracion!: Table<any>;
   alumnos!: Table<AlumnoEncrypted>;
   incidencias!: Table<IncidenciaEncrypted>;
+  asistencia!: Table<AsistenciaRecord>;
   syncQueue!: Table<SyncQueueItem>;
   metadata!: Table<Metadata>;
 
   constructor() {
     super('DocenteSIS_DB');
-    this.version(1).stores({
+    this.version(2).stores({
       cursos: '++id, nombre, grado',
       unidades: '++id, cursoId, titulo, orden',
       sesiones: '++id, unidadId, titulo, fecha',
       configuracion: 'key',
       alumnos: '++id, grupoId',
       incidencias: '++id, alumnoId, fecha',
+      asistencia: '++id, cursoId, fecha',
       syncQueue: '++id, entity, operation, synced',
       metadata: 'key'
     });
